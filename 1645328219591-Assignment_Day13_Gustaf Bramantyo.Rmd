@@ -1,0 +1,362 @@
+---
+title: "Dataviz with R 1"
+author: "Aviandito"
+date: "November 9, 2021"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Install & Load `tidyverse`
+
+Make sure you have `tidyverse` installed since `mpg` dataset is included
+in the `ggplot2` library
+
+```{r}
+## Install it if you haven't
+# install.packages("tidyverse")
+
+library(tidyverse)
+```
+
+## Explore `mpg` dataset
+
+The dataset that we'll use (`mpg`) is supplied by default in a
+`tidyverse` installation. Run the code below to see help file for `mpg`
+dataset.
+
+```{r}
+?mpg
+```
+
+Understanding of the data model is important before you analyze a
+dataset. In `mpg`, each row is an automobile (by manufacturer and model)
+and respective details about it.
+
+```{r}
+head(mpg)
+```
+
+You can use `glimpse()` to... get a glimpse on the dataset. I mean to
+look at the available columns.
+
+```{r}
+glimpse(mpg)
+```
+
+## Plotting data in `ggplot`
+
+Intuitively, higher displacement cars are less efficient. So, let's get
+started by making a scatterplot of displacement against city fuel
+consumption
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point()
+```
+
+*Quiz: Now try to plot number of cylinders (`cyl`) against highway fuel
+consumption (`hwy`) to find out the relationship between the two*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = cyl, y = hwy)) +
+  geom_point()
+```
+
+## Aesthetic
+
+All values that we want to plot as data point must be available in the
+ggplot's "aesthetic" (`aes`)
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty, color = factor(cyl))) +
+  geom_point()
+```
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty, shape = factor(cyl))) +
+  geom_point()
+```
+
+*Quiz: does SUV have worse fuel economy vs. other classes? Use color
+aesthetic to show it* I created a new column called `is_suv` to evaluate
+whether a data point is in the class `suv` or not. Plot it as the color
+aesthetic.
+
+```{r}
+mpg %>%
+  mutate(is_suv = ifelse(class == 'suv', 'SUV', 'Non-SUV')) %>%
+  ggplot(aes(x = displ, y = cty, color = is_suv)) +
+  geom_point()+
+  scale_colour_manual(values = c('red','purple')) #mengubah warnanya
+
+```
+
+## Facet
+
+Another way to plot a feature is by using facet. Facet plots subset of
+data into different subplots.
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  facet_wrap(~year+drv)
+```
+
+```{r}
+
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  facet_grid(vars(year),vars(drv))
+
+
+```
+
+*Quiz: Does the displacement vs. city fuel economy scatterplot has
+different trend when we compare different drivetrain (`drv`) across
+different year (`year`)? Use facet_grid to do this.*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  facet_grid()
+```
+
+## Geom
+
+Geoms are how ggplot represent the data point in the plot. Examples
+below shows the same aesthetic, mapped into different geoms. `ggplot`
+has \> 40 geoms.
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point()
+```
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_smooth(method = 'lm', se = FALSE)
+```
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE)
+```
+
+*Quiz 1: does the displ-cty trend differs between drivetrain (`drv`)
+type? Use color aesthetic on the regression line to show it*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  geom_smooth(aes(color = drv), method = 'lm', se = FALSE)
+```
+
+*Quiz 2: Does the displ-cty trend differs between classes? Use
+regression line and facet_wrap on `class` to show it*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE, aes(color=drv)) +
+  facet_wrap(vars(class))
+```
+
+\
+
+## Visualizing count of a categorical feature
+
+We can use a barplot to do this.
+
+```{r}
+mpg %>%
+  count(manufacturer) %>%
+  ggplot(aes(x = manufacturer, y = n)) +
+  geom_bar(stat = 'identity')
+```
+
+*Quiz 1: Discuss idea to improve the looks of the plot. Now implement
+it!* Usually when the x-axis labels are too long, I'd like to flip the x
+and y axis. Furthermore, to make the plot more intuitive, I usually
+arrange the bar plot from the highest to the lowest value. \* Use
+`reorder()` to reorder the manufacturer by variable `n` \* Use
+`coord_flip()` to flip the coordinates
+
+```{r}
+mpg %>%
+  count(manufacturer) %>%
+  ggplot(aes(x = reorder(manufacturer,n), y = n)) +
+  geom_bar(stat = 'identity') +
+  coord_flip()
+  # ...and flip the coordinate system with coord_flip()
+```
+
+*Quiz 2: How to put count label into the plot?* One way to do it: Use
+`label` aesthetic in a `geom_label()`!
+
+```{r}
+mpg %>%
+  count(manufacturer) %>%
+  ggplot(aes(x = reorder(manufacturer,n) y = n)) +
+  geom_bar(stat = 'identity') +
+  coord_flip()+
+  geom_label(aes(label = n))
+```
+
+## Visualizing distribution of a numeric feature
+
+We need to create a histogram. Few geoms to do this: \*
+`geom_histogram()` \* `geom_density()`
+
+```{r}
+mpg %>%
+  ggplot(aes(x = cty)) +
+  geom_density()
+```
+
+*Quiz 1: does the city mileage per gallon distribution changes between
+1999 and 2008 (variable `year`)? Use fill aesthetic to show it, and play
+with alpha for better visuals*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = cty)) +
+  geom_density(aes(fill = factor(year)), alpha = 0.2)
+```
+
+*Quiz 2: If there's a difference (spoiler alert: yes, there is), why?
+Plot the distribution of displacement (`displ`) between 1999 and 2008 to
+understand why.*
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ)) +
+  geom_density(aes(fill = factor(year)), alpha = 0.2)
+```
+
+## Visualizing relationship: categorical-numeric
+
+To show a correlation between categorical and numeric variable, we need
+to show distribution of features in different categories. We can use
+these geoms to do this: `geom_boxplot()`, `geom_violin()`, etc.
+
+```{r}
+mpg %>%
+  ggplot(aes(x = trans, y = cty)) +
+  geom_boxplot()
+```
+
+*Quiz: There are too many subcategories of transmissions here. Can you
+summarise the distribution of auto vs. manual to see which one is more
+economical?*
+
+We will do some data wrangling to do this. Lets create a new variable
+called `trans_cat` which will says `auto` if the prefix is "auto", and
+`manual` if the prefix is "manual".
+
+To add a new column into a tibble, in `tidyverse` we can use `mutate()`.
+Let's use `grepl()` to do "pattern matching". Return "Auto" if pattern
+matched, else return "Manual" if pattern not matched.
+
+```{r}
+mpg %>%
+  mutate(trans_cat = ifelse(grepl('auto', trans), 'Automatic', 'Manual')) %>%
+  ggplot(aes(x = trans_cat, y = cty)) +
+  geom_boxplot()
+```
+
+## Visualizing relationship: numeric-numeric
+
+You have learned the most general geom to do it: `geom_point()`
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point()
+```
+
+*Quiz* 1. Use facet_wrap to show whether the trend between 1999 vs. 2008
+is the same/not 2. There's a colorblind-friendly color pallette called
+"viridis". Use viridis pallette to visualize "drv". For
+discrete/categorical variable, use `scale_color_viridis_d()`
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty, color = drv)) +
+  geom_point() +
+  facet_wrap(~year) + 
+  scale_color_viridis_d()
+```
+
+## Assignment
+
+We will use the Ames Housing dataset for the assignment.
+
+```{r}
+ames <- read.csv("~/Documents/Dibimbing day 13/house-prices-advanced-regression-techniques (1)/train.csv")
+ames
+```
+
+```{r}
+glimpse(ames)
+```
+
+Gain & visualize 4 insights from the Ames housing dataset
+
+1.  Count of one categorical feature
+
+```{r}
+
+ames %>%
+count(SaleCondition) %>%
+ggplot(aes(x = SaleCondition, y = n)) +
+geom_bar(stat = 'identity')
+
+```
+
+2.  sDistribution of one continuous featuresss
+
+```{r}
+ames %>%
+  ggplot(aes(x = GrLivArea)) +
+  geom_density()
+```
+
+3.  Categorical-continuous
+
+```{r}
+ames%>%
+  ggplot(aes(x = RoofStyle, y = SalePrice)) +
+  geom_boxplot()
+```
+
+4.  Continuous-continuous
+
+```{r}
+ames %>%
+  ggplot(aes(x = YearBuilt, y = SalePrice)) +
+  geom_point() 
+#  scale_color_viridis_d()
+```
+
+<!-- Copyright 2021 Mohammad Aviandito -->
+
+<!-- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: -->
+
+<!-- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. -->
+
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
